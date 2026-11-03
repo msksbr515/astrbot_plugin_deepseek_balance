@@ -126,3 +126,51 @@
 - 提交 `main.py` 与工作日志。
 - 添加基于本地 mock 服务器的单元测试（正常响应、HTTP 错误、超时、连接失败、非 JSON、字段缺失、密钥脱敏）。
 - 编写 README。
+
+---
+
+## 2026-11-03 15:57–16:05 — 阶段 3（部分）：Mock 服务器测试
+
+### 目标
+- 在不使用真实 API Key 的前提下验证成功/失败路径、错误分类与密钥脱敏。
+
+### 调查依据 / 测试方式
+- 使用标准库 `unittest.IsolatedAsyncioTestCase` + `aiohttp.web` 在本机 `127.0.0.1:0` 启动临时 HTTP 服务，插件通过真实 HTTP 请求访问该服务（Mock API，非 DeepSeek 真实接口）。
+- 测试进程将 `ASTRBOT_ROOT` 指向系统临时目录，避免在仓库内生成 AstrBot 运行数据。
+- 测试文件：`tests/test_balance.py`。
+
+### 覆盖范围（共 23 个测试）
+- 工具注册：名称、描述、无参数（`{"type": "object", "properties": {}}`）。
+- 成功：原始余额字段完整返回；`is_available=false` + 空 `balance_infos` 仍视为有效响应；请求路径严格为配置的 `/user/balance`；`Authorization` 为 `Bearer <key>`。
+- HTTP 错误：401/403（`auth_error`）、404（`endpoint_not_found`）、429（`rate_limited`）、503（`server_error`）、418（`http_error`）、302（`redirect_error`，不跟随重定向）。
+- 响应格式：非 JSON、空响应体、无法解码的字节流（`invalid_json`）；缺少 `is_available`/`balance_infos`、非对象 JSON（`invalid_response`）；200 中的 `error` 字段（`business_error`）。
+- 网络：请求超时（`timeout`）、连接被拒绝（`connection_error`）。
+- 配置：缺少 URL、缺少 Key、无 scheme、非 http(s) scheme（`config_error`）。
+- 安全：401 纯文本响应体包含 Key 时，返回文本中 Key 被替换为 `***`。
+
+### 测试与验证
+- 命令：`.venv/Scripts/python.exe -m unittest discover -s tests -v`
+- 结果：**Ran 23 tests — OK**。
+- `ruff check .` / `ruff format --check .`：通过。
+- 测试期间发现并修复：非 UTF-8 响应体解码可能抛出 `UnicodeDecodeError`，改为 `response.text(errors="replace")`（提交 `d2f0ae7`）。
+- DNS 失败路径（`dns_error`）：代码已实现，但未写自动化测试（依赖不可解析域名，网络环境不稳定），标记为**未覆盖**。
+- 真实 AstrBot 运行实例加载、真实 DeepSeek 接口调用：**未执行**。
+
+### 文件变更
+- 新增 `tests/test_balance.py`（23 个测试）。
+- 修改 `main.py`（解码容错，已单独提交）。
+- 修改 `worklog.md`（本节）。
+
+### 问题与风险
+- 测试为本地 Mock HTTP 服务，不能等同于真实 DeepSeek API 或真实 AstrBot 运行时验证。
+- AstrBot 对工具的完整调用链路（模型发起 tool call → `llm_tools` 执行 → 返回内容进入下一轮 prompt）尚未在运行实例中验证。
+
+### Git 状态
+- 分支：`main`
+- 已提交：`168b8aa` feat(tool)、`d2f0ae7` fix(api)（1 行解码修复）。
+- `tests/` 与本节日志待提交。
+
+### 下一步
+- 提交测试文件与日志。
+- 编写 README（安装、配置、使用、限制、许可证）。
+- 最终检查敏感信息、文档一致性与 Git 差异。
