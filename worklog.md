@@ -402,3 +402,33 @@
 
 ### 未执行
 - 未推送、未打标签、未创建 Release。
+
+---
+
+## 2026-11-03 17:35–18:00 — 阶段 9：E2E 交叉校验模型 JSON 报告
+
+### 背景
+- 原 E2E 只从服务器日志确认工具被调用，助手回复仅检查长度与关键词，模型是否真正理解工具结果没有验证，判定不够严谨。
+
+### 新流程
+- 提示词要求模型：确认工具是否存在、必须调用一次工具、然后只输出一个 JSON 对象。
+- JSON 字段：`saw_tool`、`called_tool`、`tool_succeeded`、`is_available`、`balance_infos`（每条含 `currency`、`total_balance`、`granted_balance`、`topped_up_balance`）、`evaluation`、`reason`。
+- 新增 `assistant_report.py`：严格校验字段类型（布尔值、非空字符串、金额可解析），`BalanceInfo` 统一币种大小写与金额比较。
+- 新增 `json_extraction.py`：从含 Markdown 代码块或解释文字的回复中提取 JSON 对象；日志工具结果提取也复用它。
+- 新增 `test_assistant_report.py`：覆盖代码块解析、金额等价、币种/金额/可用性不一致、非法布尔值、非法金额、无 JSON 等场景。
+
+### 断言口径
+- 模型 JSON 必须成功解析，`saw_tool`、`called_tool`、`tool_succeeded` 均为 `true`。
+- 服务器日志中必须存在真实工具结果，且 `ok=true`。
+- 模型报告的 `is_available` 必须与真实工具结果一致。
+- 模型报告的 `balance_infos` 必须与真实工具结果币种集合一致；每条明细的 `total_balance`、`granted_balance`、`topped_up_balance` 按数值比较（允许 `110` 与 `110.00` 这种格式差异）。
+- `evaluation` 与 `reason` 只要求非空并原样输出，不参与内容断言。
+
+### 本次实际验证
+- `uv run python -m unittest discover -s tests -v`：**Ran 35 tests — OK**（33 个本地测试 + 2 个真实接口测试）。
+- 真实 AstrBot E2E：连续 2 次通过；模型报告 `saw_tool/called_tool/tool_succeeded` 均为 true，`is_available` 与 `balance_infos` 和服务器日志中的真实工具结果一致。
+- E2E 输出包含模型报告余额明细及助手 `evaluation`/`reason`，不打印 API Key。
+- `uv run ruff check .` / `uv run ruff format --check .`：通过。
+
+### 未执行
+- 未推送、未打标签、未创建 Release。
