@@ -5,4 +5,4 @@ short_desc: 查询 DeepSeek API 账户余额
 version: 0.1.0
 author: msksbr515
 repo: https://github.com/msksbr515/astrbot_plugin_deepseek_balance
-astrbot_version: ">=4.29.4"
+astrbot_version: ">=4.29.0"
