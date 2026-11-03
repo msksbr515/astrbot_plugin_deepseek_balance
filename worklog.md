@@ -365,3 +365,40 @@
 ### 未执行
 - 未推送、未打标签、未创建 Release。
 - 未在用户自己的长期运行实例或其他平台适配器上验证。
+
+---
+
+## 2026-11-03 16:45–17:05 — 阶段 8：扁平化模块拆分
+
+### 目标
+- 拆分 `main.py` 与测试脚本，避免单文件过长；保持扁平目录结构并提高面向对象程度。
+
+### 插件拆分（仓库根目录）
+- `main.py`：仅保留 `DeepSeekBalancePlugin`、工具注册与依赖组装。
+- `settings_reader.py`：`SettingsReader`、`PluginSettings`、`ConfigError`。
+- `balance_http_client.py`：`BalanceHttpClient`、`HttpResponse`、`HttpTransportError`。
+- `balance_response.py`：`BalanceResponseParser`（JSON 解析与余额结构校验）。
+- `balance_service.py`：`BalanceService` 编排配置读取、请求发送与结果转换。
+- `tool_result.py`：`ToolResult` 统一成功/失败 JSON 结构。
+- `secret_redactor.py`：`SecretRedactor` 负责脱敏与 body 预览。
+- `http_errors.py`：`HttpErrorCatalog` 负责 HTTP 状态到错误类型的映射。
+- 插件以 `data.plugins.<插件名>.main` 包子模块加载，模块间使用相对导入（与 AstrBot 内置插件一致）。
+
+### 测试拆分（tests/）
+- 通用支撑：`plugin_loader.py`、`balance_fixtures.py`、`balance_mock_server.py`、`tool_harness.py`、`balance_test_case.py`、`env_file.py`。
+- 单元测试按关注点拆分：`test_tool_registration.py`、`test_balance_success.py`、`test_balance_http_errors.py`、`test_balance_payloads.py`、`test_balance_transport.py`、`test_balance_config.py`。
+- E2E 拆分：`e2e_config.py`、`e2e_error.py`、`astrbot_instance.py`、`astrbot_dashboard.py`、`e2e_logs.py`、`e2e_runner.py`；`e2e_real_astrbot.py` 仅保留 CLI 入口。
+- E2E 安装插件时复制仓库根目录全部 `*.py` 与元数据文件，避免新增模块遗漏。
+
+### 配套更新
+- GitHub Actions 打包改为 `cp *.py ...`，ZIP 自动包含全部插件模块。
+- README 更新 Release ZIP 内容说明。
+
+### 本次实际验证
+- `uv run python -m unittest discover -s tests -v`：**Ran 26 tests — OK**（24 个本地测试，含 1 个插件类断言；2 个真实接口测试）。
+- 真实 AstrBot 端到端：通过（插件 v0.1.0 activated=True，工具调用 ok=true，`balance_infos` 1 条，助手回复非空）。
+- `uv run ruff check .` / `uv run ruff format --check .`：通过。
+- 本地按 CI 结构构建 ZIP（12,884 字节），`_PluginUpdater.inspect_plugin_archive` 识别成功，包含全部 8 个 Python 模块。
+
+### 未执行
+- 未推送、未打标签、未创建 Release。
