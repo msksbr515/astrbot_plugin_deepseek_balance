@@ -63,6 +63,7 @@ URL 规则：
 - 必须带 `http://` 或 `https://`，并包含完整路径。
 - 正确：`https://api.deepseek.com/user/balance`
 - 错误：`https://api.deepseek.com`（不会自动补 `/user/balance`）
+- 错误：`api.deepseek.com/user/balance`（不会自动补 `https://`）
 - 插件不跟随重定向；遇到 3xx 请改为最终地址。
 
 API Key 不会写入日志、工具返回值或错误信息。
@@ -107,7 +108,7 @@ API Key 不会写入日志、工具返回值或错误信息。
 
 | 方式 | 来源 | 操作 |
 | --- | --- | --- |
-| 插件市场 | 官方市场 | **尚未收录**，上架后可在 WebUI 搜索安装 |
+| 插件市场 | 官方市场 | 在 WebUI 搜索安装，注意作者是 `msksbr` |
 | URL 安装 | GitHub 仓库 | 在 WebUI 填 `https://github.com/msksbr515/astrbot_plugin_deepseek_balance` |
 | ZIP 安装 | GitHub Releases | 下载 `astrbot_plugin_deepseek_balance-<version>.zip` 上传 |
 | 手动安装 | Git Clone | 克隆到 `<ASTRBOT_ROOT>/data/plugins/` 后重载插件 |
