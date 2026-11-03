@@ -1,38 +1,53 @@
 # AstrBot DeepSeek 余额查询插件
 
-为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 的 AI Agent 提供查询 DeepSeek API 账户余额的工具。用户询问余额时，模型可以自主调用该工具；插件请求用户配置的 API 地址，并把原始余额数据交还给模型，由模型组织回答。
+为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 提供一个无参数的余额查询工具，由模型在用户询问余额时自主调用。
 
-## 功能
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant M as AstrBot 模型
+    participant P as 本插件
+    participant D as DeepSeek API
+    U->>M: 我的 API 还有多少余额？
+    M->>P: deepseek_balance_fetch()
+    P->>D: GET api_url（Bearer 认证）
+    D-->>P: is_available + balance_infos
+    P-->>M: 结构化 JSON
+    M-->>U: 自然语言回答
+```
 
-- 注册一个 Agent Tool：`deepseek_balance_fetch`，无需用户提供参数。
-- 使用插件配置中的**完整 API URL** 发起 HTTP GET 请求，不拼接、不追加任何路径。
-- 通过 `Authorization: Bearer <API_KEY>` 认证。
-- 成功时返回结构化 JSON，保留接口返回的原始业务字段（`is_available`、`balance_infos` 及其明细）。
-- 对配置缺失、网络异常、HTTP 错误、超时、非 JSON 响应、字段缺失等情况返回明确的错误类型，不会把失败当成余额为零。
-- 不会在日志或工具返回内容中输出 API Key。
-
-本插件不包含定时查询、余额告警、历史记录、数据库、多 Key / 多 Provider 管理等功能。
-
-## 文档
-
-| 文档 | 面向 | 内容 |
-| --- | --- | --- |
-| [README.md](README.md) | 用户 | 功能、配置、安装、错误处理（本文） |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | 开发者 | 架构与模块职责、请求流程、工具契约、测试体系、调试、打包与发布 |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献者 | 问题报告、分支与提交规范、测试矩阵、安全规则、PR 与审核流程 |
-| [worklog.md](worklog.md) | 维护者 | 分阶段开发记录与实际验证结果 |
-
-## 工具说明
+## 工具
 
 | 项目 | 内容 |
 | --- | --- |
-| 工具名称 | `deepseek_balance_fetch` |
-| 工具参数 | 无 |
-| 调用方式 | 由模型根据用户意图自主调用（function calling） |
-| 适用场景 | 用户询问 API 账户余额、可用额度或账户资金情况 |
-| 返回内容 | JSON 文本，包含 HTTP 状态码与接口原始数据；失败时包含错误类型、原因与状态码 |
+| 名称 | `deepseek_balance_fetch` |
+| 参数 | 无 |
+| 调用方 | 模型自主调用（function calling） |
+| 返回 | JSON：成功含 `ok`、`http_status`、`data`；失败含 `ok`、`error` |
 
-成功返回示例：
+插件不解析聊天消息，也不生成固定回复。
+
+## 配置
+
+插件只有两个配置项：
+
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| `api_url` | 字符串 | 余额接口的**完整 URL**，原样使用 |
+| `api_key` | Secret | 用于 `Authorization: Bearer <key>` |
+
+URL 规则：
+
+- 必须带 `http://` 或 `https://`，并包含完整路径。
+- 正确：`https://api.deepseek.com/user/balance`
+- 错误：`https://api.deepseek.com`（不会自动补 `/user/balance`）
+- 插件不跟随重定向；遇到 3xx 请改为最终地址。
+
+API Key 不会写入日志、工具返回值或错误信息。
+
+## 返回示例
+
+成功：
 
 ```json
 {
@@ -52,7 +67,7 @@
 }
 ```
 
-失败返回示例：
+失败：
 
 ```json
 {
@@ -66,163 +81,45 @@
 }
 ```
 
-## 插件配置
+## 安装
 
-插件只有一个配置文件 `_conf_schema.json`，配置页面中只有两个配置项：
-
-| 配置项 | 类型 | 说明 |
+| 方式 | 来源 | 操作 |
 | --- | --- | --- |
-| `api_url` | 字符串 | 余额查询接口的**完整 URL** |
-| `api_key` | 字符串（Secret，密码框显示） | DeepSeek API Key，用于 Bearer 认证 |
+| 插件市场 | 官方市场 | **尚未收录**，上架后可在 WebUI 搜索安装 |
+| URL 安装 | GitHub 仓库 | 在 WebUI 填 `https://github.com/msksbr515/astrbot_plugin_deepseek_balance` |
+| ZIP 安装 | GitHub Releases | 下载 `astrbot_plugin_deepseek_balance-<version>.zip` 上传 |
+| 手动安装 | Git Clone | 克隆到 `<ASTRBOT_ROOT>/data/plugins/` 后重载插件 |
 
-### API URL 填写要求
-
-插件会**原样使用**配置的 URL 发起请求，不会自动添加 `/user/balance`、不会追加斜杠、不会改写路径。
-
-- 正确示例：`https://api.deepseek.com/user/balance`
-- 错误示例：`https://api.deepseek.com`（缺少路径，插件不会自动补全）
-- 错误示例：`api.deepseek.com/user/balance`（缺少 `http://` 或 `https://`）
-
-DeepSeek 官方接口参考：[获取用户余额](https://api-docs.deepseek.com/zh-cn/api/get-user-balance)（`GET /user/balance`）。
-
-插件不跟随 HTTP 重定向。如果接口返回 3xx，请把配置改为最终地址。
-
-### API Key 配置方法
-
-在 AstrBot WebUI 的插件配置页面填写 `api_key`。该字段使用 Secret 类型，页面以密码形式展示。API Key 只用于生成请求头 `Authorization: Bearer <API_KEY>`，不会写入日志、工具返回值或错误信息。
-
-## 使用示例
-
-用户在聊天中询问：
-
-> 我的 DeepSeek API 还有多少余额？
-
-模型调用 `deepseek_balance_fetch`，插件请求配置的 URL，返回上述 JSON；模型再根据 `data` 中的余额字段向用户说明。插件本身不生成固定文案。
+ZIP 包含根目录全部 `*.py`、`metadata.yaml`、`_conf_schema.json`、`README.md`、`LICENSE`。安装后在插件配置页填写 `api_url` 与 `api_key`。
 
 ## 错误处理
 
-所有失败都会返回 `ok: false` 与 `error.type`，不会返回虚假的零余额。
+所有失败都返回 `ok: false`，不会把失败当成余额为零。
 
-| `error.type` | 含义 |
+| 类别 | `error.type` |
 | --- | --- |
-| `config_error` | API URL 或 API Key 未配置，或 URL 格式无效 |
-| `invalid_url` | URL 无法被 HTTP 客户端解析 |
-| `dns_error` | 域名解析失败 |
-| `connection_error` | 无法建立连接（如连接被拒绝） |
-| `ssl_error` | TLS 证书校验失败 |
-| `timeout` | 请求超时（15 秒） |
-| `network_error` | 其他网络请求错误 |
-| `auth_error` | HTTP 401 / 403 |
-| `endpoint_not_found` | HTTP 404 |
-| `rate_limited` | HTTP 429 |
-| `redirect_error` | HTTP 3xx（插件不跟随重定向） |
-| `server_error` | HTTP 5xx |
-| `http_error` | 其他非 2xx 状态码 |
-| `invalid_json` | 响应不是有效 JSON |
-| `invalid_response` | JSON 中缺少 `is_available` 或 `balance_infos` |
-| `business_error` | 响应 JSON 中包含 `error` 字段 |
+| 配置 | `config_error`、`invalid_url` |
+| 网络 | `dns_error`、`connection_error`、`ssl_error`、`timeout`（15 秒）、`network_error` |
+| HTTP | `auth_error`（401/403）、`endpoint_not_found`（404）、`rate_limited`（429）、`redirect_error`（3xx）、`server_error`（5xx）、`http_error` |
+| 响应 | `invalid_json`、`invalid_response`、`business_error` |
 
-接口返回的 JSON 错误信息会放在 `error.response` 中；非 JSON 响应会提供截断到 300 字符的 `body_preview` 与 `content_type`。
-
-## 安装
-
-仓库地址：<https://github.com/msksbr515/astrbot_plugin_deepseek_balance>
-
-### 1. 插件市场安装
-
-本插件目前**尚未提交/收录到 AstrBot 插件市场**。待上架后，可在 AstrBot WebUI 的插件市场搜索 `astrbot_plugin_deepseek_balance` 或“DeepSeek 余额”安装。
-
-插件市场安装由官方渠道分发，与下面的 GitHub 安装方式互不影响。
-
-### 2. WebUI 通过 URL 安装
-
-1. 打开 AstrBot WebUI，进入插件管理页面。
-2. 点击安装插件，选择从链接安装。
-3. 填写 Git 仓库地址（不是 README 网页地址）：
-   `https://github.com/msksbr515/astrbot_plugin_deepseek_balance`
-4. 等待安装完成，确认插件已加载。
-5. 在插件配置页填写 `api_url` 与 `api_key`。
-
-### 3. ZIP 安装
-
-1. 打开 [Releases](https://github.com/msksbr515/astrbot_plugin_deepseek_balance/releases) 页面。
-2. 下载最新 Release 中的 `astrbot_plugin_deepseek_balance-<version>.zip`（推送 `v*` 标签时由 GitHub Actions 自动打包）。
-3. 在 AstrBot WebUI 的插件安装界面选择从文件安装。
-4. 上传 ZIP，等待安装完成并检查插件加载状态。
-5. 在插件配置页填写配置。
-
-Release ZIP 包含插件的全部 Python 模块（`main.py` 及同目录下的 `balance_*.py`、`settings_reader.py`、`secret_redactor.py`、`tool_result.py`、`http_errors.py`）以及 `metadata.yaml`、`_conf_schema.json`、`README.md`、`LICENSE`，无需手动修改源码。
-
-### 4. Git Clone 手动安装
-
-```bash
-cd AstrBot/data/plugins
-git clone https://github.com/msksbr515/astrbot_plugin_deepseek_balance.git
-```
-
-然后在 AstrBot WebUI 中检查插件列表，必要时重载插件。使用 Docker 部署时，`AstrBot/data/plugins` 的宿主机路径以实际挂载目录为准。
-
-### 安装方式区别
-
-| 方式 | 来源 | 更新方式 |
-| --- | --- | --- |
-| 插件市场 | 官方市场收录的版本 | 通过 WebUI 更新 |
-| URL 安装 | GitHub 仓库 | 通过 WebUI 重新安装或更新 |
-| ZIP 安装 | GitHub Releases 的 ZIP 资源 | 下载新 Release 的 ZIP 重新上传 |
-| Git Clone | 本地克隆的仓库 | 在插件目录内 `git pull` |
+JSON 错误体会放在 `error.response`；非 JSON 响应会附带截断到 300 字符的 `body_preview` 与 `content_type`。
 
 ## 兼容性
 
-- 支持范围：AstrBot **4.29.0 及以上**（`metadata.yaml` 声明 `astrbot_version: ">=4.29.0"`）。
-- 接口核对：在 AstrBot 4.29.0 与 4.29.4 源码中确认 `@filter.llm_tool`、`_conf_schema.json`（含 `secret`）、`display_name` / `astrbot_version` 元数据均存在且用法一致。
-- 测试环境：AstrBot **4.29.4**、Python **3.12.15**。
-- 依赖：仅使用 AstrBot 自带的 `aiohttp`，因此没有 `requirements.txt`。
+- AstrBot **>= 4.29.0**（实际验证 4.29.4），Python 3.12。
+- 仅依赖 AstrBot 自带的 `aiohttp`，无 `requirements.txt`。
+- 仅适配 DeepSeek `GET /user/balance` 的响应结构。
+- 不跟随重定向、不自动重试、不做定时查询/告警/历史记录。
 
-## 已知限制
+## 文档
 
-- 仅适配 DeepSeek `GET /user/balance` 的响应结构（`is_available` + `balance_infos`）；其他服务商的余额接口未适配。
-- 不跟随 HTTP 重定向，不自动重试，不做余额告警或历史记录。
-- 工具注册、请求与错误处理已通过本地 Mock HTTP 服务测试；真实 DeepSeek 接口已验证（正常查询成功，无效 Key 返回 401），测试使用本地 `.env`，未提交任何凭据。
-- 已在临时启动的真实 AstrBot 4.29.4 实例中完成端到端验证：插件加载、模型调用工具、真实余额接口返回、WebChat 回复，以及模型 JSON 报告与真实工具结果逐字段比对均正常；尚未在长期运行实例或其他平台适配器上验证（详见 `worklog.md`）。
-
-## 开发与测试
-
-完整的架构说明、模块职责、E2E 流程与发布步骤见 [DEVELOPMENT.md](DEVELOPMENT.md)；提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-```bash
-uv venv --python 3.12
-uv pip install astrbot ruff
-uv run python -m unittest discover -s tests -v
-uv run ruff check .
-uv run ruff format --check .
-```
-
-测试分三层：
-
-- `tests/test_balance_*.py`、`tests/test_tool_registration.py`、`tests/test_assistant_report.py`：本地 `aiohttp` Mock 服务与解析测试，不访问真实 DeepSeek 接口，不需要 API Key。
-- `tests/test_real_api.py`：真实接口测试。复制 `.env.example` 为 `.env` 并填写 `DEEPSEEK_TEST_API_KEY` 后运行；未配置时自动跳过，不会失败。`.env` 已被 `.gitignore` 忽略，请勿提交。
-- `tests/e2e_real_astrbot.py`：真实 AstrBot 端到端测试。脚本在临时目录初始化并启动 AstrBot，安装本插件，用 `.env` 中的同一个 Key 配置插件和 `deepseek-chat` 助手；通过 WebChat 发送要求模型返回 JSON 的提示词（是否看到工具、是否调用、是否成功、币种与余额明细），再把模型 JSON 与服务器日志中的真实工具结果逐字段比对（金额按数值比较）。`evaluation`/`reason` 仅输出，不参与断言。默认结束后删除临时实例；`--keep` 可保留现场（目录中含真实 Key，注意安全）。
-
-```bash
-cp .env.example .env
-# 编辑 .env，填写 DEEPSEEK_TEST_API_KEY
-uv run python -m unittest discover -s tests -v
-uv run python tests/e2e_real_astrbot.py
-```
-
-## 插件市场发布（维护者）
-
-1. 更新 `metadata.yaml` 中的 `version`。
-2. 创建并推送标签：`git tag v0.1.0 && git push origin v0.1.0`。
-3. GitHub Actions（`.github/workflows/release.yml`）会校验标签与版本号一致，打包插件 ZIP 并自动创建 GitHub Release。
-4. 将代码推送到公开 GitHub 仓库后，注册 AstrBot Cloud 账号。
-5. 打开插件发布入口 <https://plugins.astrbot.app/>，并按官方文档在 <https://cloud.astrbot.app/publish> 提交插件。
-6. 等待审核结果。
-
-提交前确认 `metadata.yaml`、README、`LICENSE` 与版本号均为最新；插件市场 ZIP 包大小上限为 16 MB（官方文档：[插件发布](https://docs.astrbot.app/dev/star/plugin-publish.html)）。
+| 文档 | 内容 |
+| --- | --- |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | 架构、模块职责、测试体系、调试、打包发布 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献流程、提交规范、测试矩阵、安全规则 |
+| [worklog.md](worklog.md) | 分阶段开发与验证记录 |
 
 ## 许可证
 
-本项目采用 [MIT License](LICENSE)。许可证文件位于仓库根目录的 `LICENSE`。
-
-直接依赖 `aiohttp` 由 AstrBot 提供，其包元数据标注许可证为 `Apache-2.0 AND MIT`，与本项目的 MIT 分发方式兼容；本项目未复制或修改第三方源码。插件运行在 AstrBot（AGPL-3.0-or-later）之上，本仓库不包含 AstrBot 本体源码。
+[MIT License](LICENSE)。运行时依赖的 `aiohttp` 由 AstrBot 提供，遵循其自身许可证。
