@@ -325,3 +325,43 @@
 
 ### 安全提示
 - 测试 Key 曾在对话中出现，建议用户在验证完成后于 DeepSeek 控制台轮换该 Key。
+
+---
+
+## 2026-11-03 16:25–16:45 — 阶段 7：真实 AstrBot 实例端到端测试
+
+### 目标
+- 新增脚本，用 `.env` 中的真实 Key 在真实 AstrBot 实例里完成：
+  安装插件 → 插件配置使用该 Key → 测试助手（DeepSeek 模型）使用同一 Key → 发送“查余额” → 确认真实查到余额。
+
+### 实现
+- 新增 `tests/e2e_real_astrbot.py`（独立脚本，不被 `unittest discover` 收集）：
+  1. 读取仓库根目录 `.env` 的 `DEEPSEEK_TEST_API_KEY` / `DEEPSEEK_TEST_API_URL`。
+  2. 在系统临时目录用 `astrbot init -y` 初始化真实 AstrBot，写入 `data/cmd_config.json`。
+  3. 将 `main.py`、`metadata.yaml`、`_conf_schema.json` 安装到 `data/plugins/astrbot_plugin_deepseek_balance/`。
+  4. 写入插件配置 `data/config/astrbot_plugin_deepseek_balance_config.json`（真实 Key）。
+  5. 配置 `openai_chat_completion` 提供商 `deepseek-e2e`（`model=deepseek-chat`，Key 用 `$DEEPSEEK_TEST_API_KEY` 环境变量引用），并设为默认模型。
+  6. 启动 `astrbot run`，登录 dashboard，确认插件 `activated=True`。
+  7. 通过 WebSocket `unified-chat` 发送“查余额”，等待 `end` 事件。
+  8. 从服务器日志提取 `deepseek_balance_fetch` 的工具结果，断言 `ok=true`、`is_available` 存在、`balance_infos` 为列表；同时确认助手有文本回复。
+- 默认结束后终止服务并删除临时目录；`--keep` 保留现场用于排查（会提示目录内含真实 Key）。
+- 输出仅包含状态与计数（插件名、`ok`、`is_available`、`balance_infos` 条数、回复长度与是否提到“余额”），不打印 Key、余额数值或完整回复。
+
+### 排查记录
+- Dashboard 登录使用 `/api/v1/auth/login`；`/api/login` 在该版本会被鉴权中间件拦截。
+- `ASTRBOT_DASHBOARD_INITIAL_PASSWORD` 必须满足 AstrBot 的复杂度要求（含大写、小写、数字），否则启动时抛 `ValueError`。
+- WebSocket 路径必须使用 `/api/v1/unified-chat/ws`：`/api/v1/live-chat/ws` 会强制 `ct=live`，聊天 `ct=chat` 消息被静默忽略，表现为连接成功但无任何响应。
+- 插件必须加载在 `data/plugins/<目录名>/`，插件配置文件名由目录名决定：`data/config/<目录名>_config.json`。
+- 提供商 Key 支持 `$ENV_VAR` 引用，因此聊天 Key 无需写入磁盘；插件配置按要求写入临时实例（默认测试后删除）。
+
+### 验证结果（真实服务，连续 2 次）
+- 插件加载：`astrbot_plugin_deepseek_balance v0.1.0 activated=True`。
+- 模型：`deepseek-chat`，与插件使用同一个 `.env` Key。
+- 工具调用：`deepseek_balance_fetch` 被实际执行，返回 `ok=true`、`is_available=true`、`balance_infos` 1 条。
+- 助手回复：非空（约 610 字符），包含“余额”。
+- 临时实例已在每次运行后删除；未打印任何 Key 或余额数值。
+- 测试实例版本：AstrBot 4.29.4（4.29.0 仅做源码级兼容核对，未单独启动实例）。
+
+### 未执行
+- 未推送、未打标签、未创建 Release。
+- 未在用户自己的长期运行实例或其他平台适配器上验证。
