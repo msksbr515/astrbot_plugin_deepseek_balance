@@ -9,6 +9,9 @@ venv/
 .env
 .env.*
 
+# Local AstrBot runtime data (created when importing AstrBot outside its install)
+/data/
+
 # Caches and test artifacts
 *.log
 .pytest_cache/
