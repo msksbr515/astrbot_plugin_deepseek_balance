@@ -272,3 +272,56 @@
 ### 下一步
 - 用户推送后可进行 URL / ZIP / Git Clone 安装验证。
 - 如需补充真实环境测试，记录实际 AstrBot 版本、加载结果与工具调用结果后再更新 README 兼容性说明。
+
+---
+
+## 2026-11-03 16:05–16:20 — 阶段 6：4.29.0 兼容、真实接口实测与 Release 工作流
+
+### 目标
+- 将最低兼容版本下调到 AstrBot **4.29.0**。
+- 使用本地 `.env` 中的真实凭据完成真实 DeepSeek 接口测试。
+- 增加标签触发的 GitHub Actions：推送 `v*` 标签时校验版本、打包 ZIP 并创建 Release。
+- 文档补充 Release ZIP 安装与 `.env` 测试流程。
+
+### 兼容性核对
+- 从 PyPI 下载并解包 AstrBot 4.29.0 wheel（临时目录，不入库），确认：
+  - `api/event/filter/__init__.py` 导出 `llm_tool`，`register_llm_tool(name=...)` 存在。
+  - `_conf_schema.json` 的 `secret` 字段与 `StarMetadata.display_name` / `astrbot_version` 均存在。
+  - `_PluginUpdater.validate_plugin_metadata` 对当前 `metadata.yaml` 校验通过。
+- `metadata.yaml` 的 `astrbot_version` 由 `>=4.29.4` 调整为 `>=4.29.0`；README 兼容性说明同步更新。
+- 已核对 ZIP 安装路径：`_resolve_archive_root_dir` 支持单层顶级目录，`_finalize_extracted_archive` 会将其展平，因此 Release ZIP 采用 `astrbot_plugin_deepseek_balance/` 顶级目录结构。
+
+### 真实接口测试
+- 用户手动创建仓库根目录 `.env`（含 `DEEPSEEK_TEST_API_KEY` / `DEEPSEEK_TEST_API_URL`），凭据未出现在源码、日志、README、提交或工具输出中。
+- 新增 `.env.example`，并在 `.gitignore` 中用 `!.env.example` 放行示例文件；`.env` 仍被忽略（`git check-ignore .env` 命中）。
+- 新增 `tests/test_real_api.py`：
+  - `test_real_balance_query`：真实查询成功，断言 `ok=true`、`is_available` 存在、`balance_infos` 为列表，且返回文本不含 API Key。
+  - `test_real_invalid_key_is_auth_error`：伪造 Key 返回 `auth_error` / HTTP 401。
+  - 未配置 `DEEPSEEK_TEST_API_KEY` 时自动跳过。
+- 真实测试**未打印或记录任何余额数值与凭据**。
+
+### Release 工作流
+- 新增 `.github/workflows/release.yml`：
+  - 触发：`push` 标签 `v*`。
+  - 校验标签名与 `metadata.yaml` 的 `version` 一致（`v<version>`）。
+  - 将 `main.py`、`metadata.yaml`、`_conf_schema.json`、`README.md`、`LICENSE` 放入 `astrbot_plugin_deepseek_balance/` 后打包为 `astrbot_plugin_deepseek_balance-<version>.zip`。
+  - 使用 `gh release create --verify-tag --generate-notes` 创建 Release，权限 `contents: write`。
+- 本地按同样结构构建 ZIP（`/tmp` 临时目录），大小 9,093 字节（远低于市场 16 MB 限制），`_PluginUpdater.inspect_plugin_archive` 识别到 `astrbot_plugin_deepseek_balance/metadata.yaml`，版本 0.1.0。
+- 本机 Git Bash 无 `zip` 命令，本地构建改用 Python `zipfile`；CI 运行于 Ubuntu，使用 `zip` 命令。
+
+### 本次实际验证
+- `uv run python -m unittest discover -s tests -v`：**Ran 25 tests — OK**（含 2 个真实接口测试）。
+- `uv run ruff check .`：通过。
+- `uv run ruff format --check .`：通过（5 files already formatted）。
+- `uv run python -m py_compile main.py tests/test_balance.py tests/test_real_api.py`：通过。
+- 元数据：AstrBot **4.29.4** 与 **4.29.0** 的 `_PluginUpdater.validate_plugin_metadata` 均通过。
+- 配置 Schema：仍为 `api_url` / `api_key` 两项，`api_key.secret=true`。
+- ZIP：结构、元数据识别、体积均通过。
+
+### 未执行
+- 未推送、未创建标签、未创建 GitHub Release（工作流仅提交到本地仓库）。
+- 未在真实 AstrBot 运行实例中加载插件。
+- 未提交插件市场审核。
+
+### 安全提示
+- 测试 Key 曾在对话中出现，建议用户在验证完成后于 DeepSeek 控制台轮换该 Key。
