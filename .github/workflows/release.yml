@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches plugin version
+        run: |
+          VERSION="$(sed -n 's/^version:[[:space:]]*//p' metadata.yaml | tr -d '\r' | head -n 1)"
+          if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match metadata version v${VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Build plugin zip
+        run: |
+          PLUGIN_DIR="dist/astrbot_plugin_deepseek_balance"
+          mkdir -p "${PLUGIN_DIR}"
+          cp main.py metadata.yaml _conf_schema.json README.md LICENSE "${PLUGIN_DIR}/"
+          cd dist
+          zip -r "../astrbot_plugin_deepseek_balance-${GITHUB_REF_NAME#v}.zip" astrbot_plugin_deepseek_balance
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "astrbot_plugin_deepseek_balance-${GITHUB_REF_NAME#v}.zip" \
+            --verify-tag \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
