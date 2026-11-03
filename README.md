@@ -174,7 +174,7 @@ git clone https://github.com/msksbr515/astrbot_plugin_deepseek_balance.git
 - 仅适配 DeepSeek `GET /user/balance` 的响应结构（`is_available` + `balance_infos`）；其他服务商的余额接口未适配。
 - 不跟随 HTTP 重定向，不自动重试，不做余额告警或历史记录。
 - 工具注册、请求与错误处理已通过本地 Mock HTTP 服务测试；真实 DeepSeek 接口已验证（正常查询成功，无效 Key 返回 401），测试使用本地 `.env`，未提交任何凭据。
-- **尚未在真实 AstrBot 运行实例中加载验证**（详见 `worklog.md`）。
+- 已在临时启动的真实 AstrBot 4.29.4 实例中完成端到端验证：插件加载、`deepseek-chat` 模型调用工具、真实余额接口返回、WebChat 回复均正常；尚未在长期运行实例或其他平台适配器上验证（详见 `worklog.md`）。
 
 ## 开发与测试
 
@@ -186,15 +186,17 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-测试分两层：
+测试分三层：
 
 - `tests/test_balance.py`：本地 `aiohttp` Mock 服务，不访问真实 DeepSeek 接口，不需要 API Key。
 - `tests/test_real_api.py`：真实接口测试。复制 `.env.example` 为 `.env` 并填写 `DEEPSEEK_TEST_API_KEY` 后运行；未配置时自动跳过，不会失败。`.env` 已被 `.gitignore` 忽略，请勿提交。
+- `tests/e2e_real_astrbot.py`：真实 AstrBot 端到端测试。脚本在临时目录初始化并启动 AstrBot，安装本插件，用 `.env` 中的同一个 Key 配置插件和 `deepseek-chat` 助手，通过 WebChat 发送“查余额”，断言模型实际调用了工具并拿到余额。默认结束后删除临时实例；`--keep` 可保留现场（目录中含真实 Key，注意安全）。
 
 ```bash
 cp .env.example .env
 # 编辑 .env，填写 DEEPSEEK_TEST_API_KEY
 uv run python -m unittest discover -s tests -v
+uv run python tests/e2e_real_astrbot.py
 ```
 
 ## 插件市场发布（维护者）
