@@ -471,3 +471,25 @@
 
 ### 未执行
 - 未推送、未打标签、未创建 Release。
+
+---
+
+## 2026-11-03 18:20–18:40 — 阶段 12：README 界面截图
+
+### 新增
+- `docs/screenshots/plugin-list.png`：插件安装后显示为「已打开」。
+- `docs/screenshots/plugin-config.png`：两个配置项，Key 以掩码显示。
+- `docs/screenshots/chat-example.png`：WebChat 中询问余额，模型调用一次工具并回答。
+
+### 截图环境
+- 真实 AstrBot 4.29.4 WebUI，临时实例，截图后已停止并删除目录。
+- 余额接口指向本地 Mock，返回示例数据（CNY 110.00）。
+- 模型使用本地 OpenAI 兼容 Mock，仅用于生成截图，不消耗真实额度。
+- 截图中不含 API Key，余额为示例数据，README 已注明。
+
+### 本次实际验证
+- 三张截图均通过浏览器实际渲染确认；对话页显示「使用了 1 次工具」。
+- 文档改动未重新运行测试。
+
+### 未执行
+- 未推送、未打标签、未创建 Release。
