@@ -174,3 +174,53 @@
 - 提交测试文件与日志。
 - 编写 README（安装、配置、使用、限制、许可证）。
 - 最终检查敏感信息、文档一致性与 Git 差异。
+
+---
+
+## 2026-11-03 16:05–16:20 — 阶段 4：README 与开源交付检查
+
+### 目标
+- 完成中文 README，覆盖介绍、功能、工具、配置、错误、四种安装方式、兼容性、限制与许可证。
+- 核查第三方许可证与敏感信息，确认文档与代码一致。
+
+### 关键决策
+1. README 明确写出“尚未提交/收录到插件市场”，只说明上架后的安装方式，不虚构市场收录状态。
+2. 兼容性只声明实际验证的 AstrBot 4.29.4 / Python 3.12.15，并在 `metadata.yaml` 使用 `astrbot_version: ">=4.29.4"`。
+3. README 明确说明“尚未在真实 DeepSeek 账户与真实 AstrBot 运行实例中做端到端验证”。
+4. 安装章节分别说明插件市场、WebUI URL、ZIP、Git Clone，并给出四者区别。
+5. 发布入口同时引用用户提供的 <https://plugins.astrbot.app/> 与官方文档中的提交页 <https://cloud.astrbot.app/publish>；ZIP 上限 16 MB 依据官方文档。
+
+### 许可证核查
+- 本项目：MIT，`LICENSE` 位于根目录，版权人 `msksbr515`，年份 2026（用户确认）。
+- AstrBot 4.29.4：包元数据 `License: AGPL-3.0-or-later`，作为宿主程序使用，本仓库不包含其源码；README 已注明。
+- aiohttp 3.14.5（AstrBot 提供）：包元数据 `License-Expression: Apache-2.0 AND MIT`，与 MIT 分发兼容；未复制其源码。
+- 未引入其他运行时第三方依赖；Ruff 仅作为开发期检查工具，不随插件分发。
+- 未发现来源不明或复制粘贴的第三方代码。
+
+### 文件变更
+- 新增 `README.md`。
+- 修改 `worklog.md`（本节）。
+
+### 测试与验证
+- `python -m unittest discover -s tests`：**Ran 23 tests — OK**。
+- `ruff check .`：通过。
+- `ruff format --check .`：4 个文件已格式化。
+- `python -m py_compile main.py tests/test_balance.py`：通过。
+- 敏感信息扫描（排除 `.venv`、`.git`）：仅命中测试文件中的假 Key `sk-test-key-1234567890`，无真实凭据。
+- `git diff --check`：无空白错误。
+- Markdown 内容与代码逐项核对：配置项、错误类型、工具名、超时 15 秒、重定向策略、返回结构均一致。
+- 真实 AstrBot 运行实例加载、真实 DeepSeek 接口调用：**未执行**。
+
+### 问题与风险
+- README 中“插件市场搜索关键词”仅为上架后的预期路径，未得到市场实际验证。
+- `plugins.astrbot.app` 入口由任务说明提供，官方文档给出的提交页为 `cloud.astrbot.app/publish`；两者均已记录，未自行验证市场提交表单细节。
+
+### Git 状态
+- 分支：`main`
+- 已提交：`8591553`、`63340ed`、`8acfd14`、`6ec2eca`、`168b8aa`、`d2f0ae7`、`ea45ac3`
+- `README.md` 与本节日志待提交。
+
+### 下一步
+- 提交 README 与日志。
+- 追加阶段 5 最终交付记录（真实测试缺口、推送与市场状态）。
+- 如需真机验证：在 AstrBot 4.29.4 实例中安装插件，配置真实 URL/Key 后由模型调用工具。
