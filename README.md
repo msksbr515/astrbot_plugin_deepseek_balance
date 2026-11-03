@@ -27,6 +27,22 @@ sequenceDiagram
 
 插件不解析聊天消息，也不生成固定回复。
 
+## 界面
+
+安装后在插件列表中显示为已打开：
+
+![插件列表](docs/screenshots/plugin-list.png)
+
+插件配置只有两个输入项，API Key 以掩码显示：
+
+![插件配置](docs/screenshots/plugin-config.png)
+
+模型调用工具后根据返回数据回答余额：
+
+![对话示例](docs/screenshots/chat-example.png)
+
+> 截图为演示环境，余额为示例数据。
+
 ## 配置
 
 插件只有两个配置项：
