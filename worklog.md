@@ -493,3 +493,21 @@
 
 ### 未执行
 - 未推送、未打标签、未创建 Release。
+
+---
+
+## 2026-11-03 18:35–18:42 — 阶段 13：v0.1.0 发布
+
+### 发布结果
+- 标签 `v0.1.0` 已推送到 GitHub，指向 `e8a2f00`。
+- GitHub Actions `Release` 工作流运行成功（run `41620298606`）。
+- Release：<https://github.com/msksbr515/astrbot_plugin_deepseek_balance/releases/tag/v0.1.0>
+- 资产：`astrbot_plugin_deepseek_balance-0.1.0.zip`。
+- 使用 `gh release edit v0.1.0 --notes-file` 将自动生成的空 Changelog 替换为中文 Release Notes（功能、安装、兼容性、验证、已知限制）。
+
+### 说明
+- 标签 `0.1.0` 仅为本地误命名，未推送；实际发布使用 `v0.1.0`。
+- `git push` 不会自动推送标签，需要显式执行 `git push origin v0.1.0`。
+
+### 未执行
+- 未提交 AstrBot 插件市场审核。
