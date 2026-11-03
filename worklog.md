@@ -224,3 +224,51 @@
 - 提交 README 与日志。
 - 追加阶段 5 最终交付记录（真实测试缺口、推送与市场状态）。
 - 如需真机验证：在 AstrBot 4.29.4 实例中安装插件，配置真实 URL/Key 后由模型调用工具。
+
+---
+
+## 2026-11-03 16:20–16:25 — 阶段 5：最终验证与交付状态
+
+### 目标
+- 收尾检查：仓库文件完整性、文档一致性、可复现的测试命令、Git 状态与未完成事项。
+
+### 最终验证（本次实际执行）
+- `uv run python -m unittest discover -s tests`（Windows，AstrBot 4.29.4 / Python 3.12.15）：**Ran 23 tests — OK**。
+- `uv run ruff check .`：通过。
+- `uv run ruff format --check .`：通过（4 files already formatted）。
+- `python -m py_compile main.py tests/test_balance.py`：通过（使用 `.venv/Scripts/python.exe`）。
+- 元数据：`_PluginUpdater.validate_plugin_metadata` 通过；配置 Schema 经 `AstrBotConfig` 加载通过。
+- 工具注册（进程内）：`deepseek_balance_fetch` 存在、无参数、描述正确、`active=True`。
+- 敏感信息扫描：仅测试用假 Key；无真实凭据。
+- `git diff --check`：通过。
+
+### 仓库文件
+- `metadata.yaml`、`_conf_schema.json`、`main.py`、`tests/test_balance.py`
+- `README.md`、`LICENSE`（MIT）、`worklog.md`、`.gitignore`
+- 无 `requirements.txt`（运行时仅用 AstrBot 自带的 `aiohttp`）。
+
+### Git 状态
+- 分支：`main`
+- 提交历史：
+  - `8591553` chore(repo): add gitignore for Python and local tooling
+  - `63340ed` chore(repo): add MIT license
+  - `8acfd14` feat(plugin): add metadata and configuration schema
+  - `6ec2eca` chore(repo): ignore local AstrBot runtime data
+  - `168b8aa` feat(tool): implement deepseek balance fetch tool
+  - `d2f0ae7` fix(api): decode response bodies without raising on invalid bytes
+  - `ea45ac3` test(tool): add mocked balance query coverage
+  - `b305e4f` docs(readme): document configuration, usage and installation
+  - `d9dcc3e` docs(readme): use portable uv commands for development
+- 推送：**未推送**。
+- 插件市场：**未提交、未收录**。
+
+### 未执行 / 待用户完成
+1. 在真实 AstrBot 实例中安装并加载插件（本机无运行实例）。
+2. 使用真实 API URL 与 Key 调用工具做端到端验证（未使用用户凭据）。
+3. 推送到 `origin`（`git@github.com:msksbr515/astrbot_plugin_deepseek_balance.git`），并确认仓库公开。
+4. 在 AstrBot Cloud 注册并提交插件市场审核（需要用户身份确认）。
+5. DNS 解析失败路径缺少自动化测试（代码路径存在）。
+
+### 下一步
+- 用户推送后可进行 URL / ZIP / Git Clone 安装验证。
+- 如需补充真实环境测试，记录实际 AstrBot 版本、加载结果与工具调用结果后再更新 README 兼容性说明。
