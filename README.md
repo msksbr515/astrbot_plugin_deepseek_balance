@@ -176,11 +176,11 @@ git clone https://github.com/msksbr515/astrbot_plugin_deepseek_balance.git
 ## 开发与测试
 
 ```bash
-uv venv --python 3.12 .venv
-uv pip install --python .venv/Scripts/python.exe astrbot ruff
-.venv/Scripts/python.exe -m unittest discover -s tests -v
-.venv/Scripts/python.exe -m ruff check .
-.venv/Scripts/python.exe -m ruff format --check .
+uv venv --python 3.12
+uv pip install astrbot ruff
+uv run python -m unittest discover -s tests -v
+uv run ruff check .
+uv run ruff format --check .
 ```
 
 测试使用本地 `aiohttp` Mock 服务，不访问真实 DeepSeek 接口，也不需要真实 API Key。
