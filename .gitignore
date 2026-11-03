@@ -8,6 +8,7 @@ venv/
 # Local secrets and configuration
 .env
 .env.*
+!.env.example
 
 # Local AstrBot runtime data (created when importing AstrBot outside its install)
 /data/
