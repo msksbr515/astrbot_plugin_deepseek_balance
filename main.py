@@ -122,7 +122,7 @@ class DeepSeekBalancePlugin(Star):
             ):
                 status = response.status
                 content_type = response.headers.get("Content-Type", "")
-                body = await response.text()
+                body = await response.text(errors="replace")
         except TimeoutError:
             self.logger.warning("DeepSeek balance request timed out")
             return _failure(
