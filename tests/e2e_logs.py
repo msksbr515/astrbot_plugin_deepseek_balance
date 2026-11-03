@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import json
 import re
 from typing import Any
+
+from json_extraction import JsonObjectExtractor
 
 _SECRET_PATTERN = re.compile(r"sk-[A-Za-z0-9]{8,}")
 _BALANCE_FIELDS = (
@@ -34,6 +35,7 @@ class LogRedactor:
 class ToolResultExtractor:
     def __init__(self, tool_name: str) -> None:
         self._marker = f"Tool `{tool_name}` Result: "
+        self._json = JsonObjectExtractor()
 
     def extract(self, log_text: str) -> dict[str, Any] | None:
         index = log_text.rfind(self._marker)
@@ -42,31 +44,4 @@ class ToolResultExtractor:
         start = log_text.find("{", index + len(self._marker))
         if start < 0:
             return None
-        return self._json_object_at(log_text, start)
-
-    @staticmethod
-    def _json_object_at(text: str, start: int) -> dict[str, Any] | None:
-        depth = 0
-        in_string = False
-        escaped = False
-        for pos in range(start, len(text)):
-            char = text[pos]
-            if in_string:
-                if escaped:
-                    escaped = False
-                elif char == "\\":
-                    escaped = True
-                elif char == '"':
-                    in_string = False
-            elif char == '"':
-                in_string = True
-            elif char == "{":
-                depth += 1
-            elif char == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        return json.loads(text[start : pos + 1])
-                    except json.JSONDecodeError:
-                        return None
-        return None
+        return self._json.first_object(log_text, start)
