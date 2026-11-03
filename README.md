@@ -13,6 +13,15 @@
 
 本插件不包含定时查询、余额告警、历史记录、数据库、多 Key / 多 Provider 管理等功能。
 
+## 文档
+
+| 文档 | 面向 | 内容 |
+| --- | --- | --- |
+| [README.md](README.md) | 用户 | 功能、配置、安装、错误处理（本文） |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | 开发者 | 架构与模块职责、请求流程、工具契约、测试体系、调试、打包与发布 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献者 | 问题报告、分支与提交规范、测试矩阵、安全规则、PR 与审核流程 |
+| [worklog.md](worklog.md) | 维护者 | 分阶段开发记录与实际验证结果 |
+
 ## 工具说明
 
 | 项目 | 内容 |
@@ -177,6 +186,8 @@ git clone https://github.com/msksbr515/astrbot_plugin_deepseek_balance.git
 - 已在临时启动的真实 AstrBot 4.29.4 实例中完成端到端验证：插件加载、模型调用工具、真实余额接口返回、WebChat 回复，以及模型 JSON 报告与真实工具结果逐字段比对均正常；尚未在长期运行实例或其他平台适配器上验证（详见 `worklog.md`）。
 
 ## 开发与测试
+
+完整的架构说明、模块职责、E2E 流程与发布步骤见 [DEVELOPMENT.md](DEVELOPMENT.md)；提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ```bash
 uv venv --python 3.12
