@@ -136,12 +136,13 @@ DeepSeek 官方接口参考：[获取用户余额](https://api-docs.deepseek.com
 
 ### 3. ZIP 安装
 
-1. 打开 GitHub 仓库页面，选择 `Code` → `Download ZIP`。
-2. 在 AstrBot WebUI 的插件安装界面选择从文件安装。
-3. 上传 ZIP，等待安装完成并检查插件加载状态。
-4. 在插件配置页填写配置。
+1. 打开 [Releases](https://github.com/msksbr515/astrbot_plugin_deepseek_balance/releases) 页面。
+2. 下载最新 Release 中的 `astrbot_plugin_deepseek_balance-<version>.zip`（推送 `v*` 标签时由 GitHub Actions 自动打包）。
+3. 在 AstrBot WebUI 的插件安装界面选择从文件安装。
+4. 上传 ZIP，等待安装完成并检查插件加载状态。
+5. 在插件配置页填写配置。
 
-ZIP 中包含完整插件文件，无需手动修改源码。
+Release ZIP 包含 `main.py`、`metadata.yaml`、`_conf_schema.json`、`README.md`、`LICENSE`，无需手动修改源码。
 
 ### 4. Git Clone 手动安装
 
@@ -158,20 +159,22 @@ git clone https://github.com/msksbr515/astrbot_plugin_deepseek_balance.git
 | --- | --- | --- |
 | 插件市场 | 官方市场收录的版本 | 通过 WebUI 更新 |
 | URL 安装 | GitHub 仓库 | 通过 WebUI 重新安装或更新 |
-| ZIP 安装 | 手动下载的源码包 | 重新下载并上传 |
+| ZIP 安装 | GitHub Releases 的 ZIP 资源 | 下载新 Release 的 ZIP 重新上传 |
 | Git Clone | 本地克隆的仓库 | 在插件目录内 `git pull` |
 
 ## 兼容性
 
-- 开发与验证环境：AstrBot **4.29.4**、Python **3.12.15**。
-- `metadata.yaml` 声明 `astrbot_version: ">=4.29.4"`，AstrBot 启动时会按该范围检查兼容性。
+- 支持范围：AstrBot **4.29.0 及以上**（`metadata.yaml` 声明 `astrbot_version: ">=4.29.0"`）。
+- 接口核对：在 AstrBot 4.29.0 与 4.29.4 源码中确认 `@filter.llm_tool`、`_conf_schema.json`（含 `secret`）、`display_name` / `astrbot_version` 元数据均存在且用法一致。
+- 测试环境：AstrBot **4.29.4**、Python **3.12.15**。
 - 依赖：仅使用 AstrBot 自带的 `aiohttp`，因此没有 `requirements.txt`。
 
 ## 已知限制
 
 - 仅适配 DeepSeek `GET /user/balance` 的响应结构（`is_available` + `balance_infos`）；其他服务商的余额接口未适配。
 - 不跟随 HTTP 重定向，不自动重试，不做余额告警或历史记录。
-- 工具注册、请求与错误处理已通过本地 Mock HTTP 服务测试；**尚未在真实 DeepSeek 账户与真实 AstrBot 运行实例中做端到端验证**（详见 `worklog.md`）。
+- 工具注册、请求与错误处理已通过本地 Mock HTTP 服务测试；真实 DeepSeek 接口已验证（正常查询成功，无效 Key 返回 401），测试使用本地 `.env`，未提交任何凭据。
+- **尚未在真实 AstrBot 运行实例中加载验证**（详见 `worklog.md`）。
 
 ## 开发与测试
 
@@ -183,14 +186,25 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-测试使用本地 `aiohttp` Mock 服务，不访问真实 DeepSeek 接口，也不需要真实 API Key。
+测试分两层：
+
+- `tests/test_balance.py`：本地 `aiohttp` Mock 服务，不访问真实 DeepSeek 接口，不需要 API Key。
+- `tests/test_real_api.py`：真实接口测试。复制 `.env.example` 为 `.env` 并填写 `DEEPSEEK_TEST_API_KEY` 后运行；未配置时自动跳过，不会失败。`.env` 已被 `.gitignore` 忽略，请勿提交。
+
+```bash
+cp .env.example .env
+# 编辑 .env，填写 DEEPSEEK_TEST_API_KEY
+uv run python -m unittest discover -s tests -v
+```
 
 ## 插件市场发布（维护者）
 
-1. 将代码推送到公开 GitHub 仓库。
-2. 注册 AstrBot Cloud 账号。
-3. 打开插件发布入口 <https://plugins.astrbot.app/>，并按官方文档在 <https://cloud.astrbot.app/publish> 提交插件。
-4. 等待审核结果。
+1. 更新 `metadata.yaml` 中的 `version`。
+2. 创建并推送标签：`git tag v0.1.0 && git push origin v0.1.0`。
+3. GitHub Actions（`.github/workflows/release.yml`）会校验标签与版本号一致，打包插件 ZIP 并自动创建 GitHub Release。
+4. 将代码推送到公开 GitHub 仓库后，注册 AstrBot Cloud 账号。
+5. 打开插件发布入口 <https://plugins.astrbot.app/>，并按官方文档在 <https://cloud.astrbot.app/publish> 提交插件。
+6. 等待审核结果。
 
 提交前确认 `metadata.yaml`、README、`LICENSE` 与版本号均为最新；插件市场 ZIP 包大小上限为 16 MB（官方文档：[插件发布](https://docs.astrbot.app/dev/star/plugin-publish.html)）。
 
