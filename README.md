@@ -2,6 +2,12 @@
 
 为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 提供一个无参数的余额查询工具，由模型在用户询问余额时自主调用。
 
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+[![AstrBot](https://img.shields.io/badge/AstrBot-%3E%3D4.29.0-6f42c1.svg)](https://github.com/AstrBotDevs/AstrBot)
+[![Version](https://img.shields.io/badge/version-0.1.0-informational.svg)](metadata.yaml)
+[![GitHub](https://img.shields.io/badge/GitHub-msksbr515-181717?logo=github)](https://github.com/msksbr515/astrbot_plugin_deepseek_balance)
+
 ```mermaid
 sequenceDiagram
     participant U as 用户
