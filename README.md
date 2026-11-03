@@ -142,7 +142,7 @@ DeepSeek 官方接口参考：[获取用户余额](https://api-docs.deepseek.com
 4. 上传 ZIP，等待安装完成并检查插件加载状态。
 5. 在插件配置页填写配置。
 
-Release ZIP 包含 `main.py`、`metadata.yaml`、`_conf_schema.json`、`README.md`、`LICENSE`，无需手动修改源码。
+Release ZIP 包含插件的全部 Python 模块（`main.py` 及同目录下的 `balance_*.py`、`settings_reader.py`、`secret_redactor.py`、`tool_result.py`、`http_errors.py`）以及 `metadata.yaml`、`_conf_schema.json`、`README.md`、`LICENSE`，无需手动修改源码。
 
 ### 4. Git Clone 手动安装
 

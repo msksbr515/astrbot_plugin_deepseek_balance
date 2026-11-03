@@ -29,7 +29,7 @@ jobs:
         run: |
           PLUGIN_DIR="dist/astrbot_plugin_deepseek_balance"
           mkdir -p "${PLUGIN_DIR}"
-          cp main.py metadata.yaml _conf_schema.json README.md LICENSE "${PLUGIN_DIR}/"
+          cp *.py metadata.yaml _conf_schema.json README.md LICENSE "${PLUGIN_DIR}/"
           cd dist
           zip -r "../astrbot_plugin_deepseek_balance-${GITHUB_REF_NAME#v}.zip" astrbot_plugin_deepseek_balance
 
