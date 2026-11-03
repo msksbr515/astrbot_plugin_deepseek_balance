@@ -1,37 +1,19 @@
+from __future__ import annotations
+
 import json
 import os
-import sys
-import tempfile
 import unittest
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-os.environ.setdefault(
-    "ASTRBOT_ROOT",
-    os.path.join(tempfile.gettempdir(), "astrbot_plugin_deepseek_balance_tests"),
-)
-sys.path.insert(0, str(ROOT))
+from env_file import EnvFile
+from plugin_loader import REPO_ROOT, load_plugin_module
 
-import main
-
-
-def _load_dotenv(path: Path) -> None:
-    if not path.is_file():
-        return
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        name, value = line.split("=", 1)
-        name = name.strip()
-        if name and name not in os.environ:
-            os.environ[name] = value.strip().strip('"').strip("'")
+main = load_plugin_module("main")
 
 
 class RealBalanceApiTest(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        _load_dotenv(ROOT / ".env")
+        EnvFile(REPO_ROOT / ".env").load()
         cls.api_key = os.environ.get("DEEPSEEK_TEST_API_KEY", "").strip()
         cls.api_url = os.environ.get(
             "DEEPSEEK_TEST_API_URL",
